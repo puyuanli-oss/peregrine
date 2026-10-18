@@ -1,26 +1,43 @@
 #!/bin/bash
+set -euo pipefail
 
-if [ $# -eq 0 ]; then
- echo "ERROR: Please specify target folder path"
- exit 1
+if [[ $# -ne 1 || -z "$1" ]]; then
+    printf 'Usage: %s OUTPUT_DIRECTORY\n' "$0" >&2
+    exit 1
 fi
-TARGET=$1
 
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+for program in python3 bedtools perl; do
+    if ! command -v "$program" >/dev/null 2>&1; then
+        printf 'ERROR: Required command not found: %s\n' "$program" >&2
+        exit 1
+    fi
+done
+
+REPO_DIR="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET="$1"
+if [[ "$TARGET" != /* ]]; then
+    TARGET="$PWD/$TARGET"
+fi
+mkdir -p "$TARGET"
+cd "$REPO_DIR"
+
+python3 -m venv "$REPO_DIR/venv"
+source "$REPO_DIR/venv/bin/activate"
+PYTHON="$REPO_DIR/venv/bin/python"
+"$PYTHON" -m pip install "pip==25.3"
+"$PYTHON" -m pip install \
+    --build-constraint "$REPO_DIR/build-constraints.txt" \
+    -r "$REPO_DIR/requirements.txt"
 echo 'venv done'
 
-python eQTL/eqtl.py $TARGET/eQTL
+"$PYTHON" "$REPO_DIR/eQTL/eqtl.py" "$TARGET/eQTL"
 echo 'eQTL done'
 
-python heirarchicalTAD/heirarchicalTAD.py $TARGET/heirarchicalTAD
+"$PYTHON" "$REPO_DIR/heirarchicalTAD/heirarchicalTAD.py" "$TARGET/heirarchicalTAD"
 echo 'heirarchical TAD done'
 
-./tad/tad.sh $TARGET/tad
+bash -e -o pipefail "$REPO_DIR/tad/tad.sh" "$TARGET/tad"
 echo 'TAD done'
 
-# cd ../chia_pet
-# python ChIA_PET.py
-
+# ChIA-PET remains disabled pending workflow review.
 deactivate

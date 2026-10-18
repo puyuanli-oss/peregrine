@@ -34,15 +34,19 @@ def split(file):
     for output_file in output_files.values():
         output_file.close()
 
-def trim(file, output_file):
-    '''
-        removes undesirable columns from input file 
-    '''
+def trim(file, output_file, tissue):
+    """
+    Select required columns and attach the source tissue.
+    """
     df = pd.read_csv(file, delimiter='\t', header=0)
-    new_df = df.filter(['variant_id', 'gene_id', 'pval_nominal'], axis=1)
-    new_df['tissue'] = ['Colon_Sigmoid'] * len(new_df)
+    required = ['variant_id', 'gene_id', 'pval_nominal']
+    missing = [column for column in required if column not in df.columns]
+    if missing:
+        raise ValueError(f"{file}: missing required columns: {', '.join(missing)}")
+
+    new_df = df.loc[:, required].copy()
+    new_df['tissue'] = tissue
     new_df.rename(columns={'variant_id': 'variant', 'gene_id': 'gene'}, inplace=True)
-    new_df.index = np.arange(1, len(new_df) + 1)
     new_df.to_csv(output_file, sep='\t', index=False)
 
 def eqtl_process(input_file, output_file):
@@ -57,7 +61,7 @@ def eqtl_process(input_file, output_file):
     for line in eqtl_lines[1:]:
         variant_id, gene_id, pval_nominal, tissue = line.strip().split('\t')
         variant_id_split = variant_id.split('_')
-        chr = 'chr' + variant_id[0]
+        chr = 'chr' + variant_id_split[0]
         start = variant_id_split[1]
         key = f"{chr}\t{start}\t{start}\t{variant_id}\t{gene_id}_{pval_nominal}"
         out.append(key + '_' + tissue)
@@ -228,6 +232,11 @@ if __name__ == "__main__":
             tissues[tissue] = tissueID
 
     gene_pair_gz_files = glob.glob(os.path.join('eQTL', 'GTEx_Analysis_v7_eQTL', '*variant_gene_pairs.txt.gz'))
+    if not gene_pair_gz_files:
+        raise FileNotFoundError(
+            'No eQTL input files found in eQTL/GTEx_Analysis_v7_eQTL '
+            '(expected *variant_gene_pairs.txt.gz)'
+        )
     links_files = []
     linksnum_files = []
 
@@ -237,7 +246,7 @@ if __name__ == "__main__":
         folder = os.path.basename(gene_pair_gz_file).split('.')[0]
         folder = os.path.join(target_path, folder)
         os.makedirs(folder, exist_ok=True)
-        gene_pair_file = os.path.basename(gene_pair_gz_file).strip('.gz')
+        gene_pair_file = os.path.basename(gene_pair_gz_file).removesuffix('.gz')
 
         # extract the txt file from the zip file and place it in the created folder
         with gzip.open(gene_pair_gz_file, 'rb') as gz_file:
@@ -249,9 +258,9 @@ if __name__ == "__main__":
 
         trim_infile = os.path.join(folder, gene_pair_file)
         trim_outfile = os.path.join(folder, 'newdata' + os.path.basename(trim_infile))
-        trim(trim_infile, trim_outfile)
-
         tissue = gene_pair_file.split('.')[0]
+        trim(trim_infile, trim_outfile, tissue)
+
         tissue_out = os.path.join(folder, tissue + '_eqtl')
         eqtl_process(trim_outfile, tissue_out)
 

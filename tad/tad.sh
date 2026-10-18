@@ -1,31 +1,37 @@
-TARGET=$1
+#!/bin/bash
+set -euo pipefail
 
-python tad/TADorder.py $TARGET
-echo 'TADorder done'
+if [[ $# -ne 1 || -z "$1" ]]; then
+    printf 'Usage: %s OUTPUT_DIRECTORY\n' "$0" >&2
+    exit 1
+fi
 
-python tad/bedtoolIntersect.py $TARGET
-echo 'bedtoolIntersect done'
+REPO_DIR="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TARGET="$1"
+if [[ "$TARGET" != /* ]]; then
+    TARGET="$PWD/$TARGET"
+fi
 
-python tad/split.py $TARGET
-echo 'split done'
+PYTHON="$REPO_DIR/venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+    printf 'ERROR: Virtual environment Python not found: %s\n' "$PYTHON" >&2
+    exit 1
+fi
 
-python tad/bTADlinks.py $TARGET
-echo 'bTADlinks done'
+cd "$REPO_DIR"
 
-python tad/concatenate_linksbTAD.py $TARGET
-echo 'concatenate_linksbTAD done'
-
-python tad/tTADlinks.py $TARGET
-echo 'tTADlinks done'
-
-python tad/linksbTAD_tissueReplace.py $TARGET
-echo 'linksbTAD_tissueReplace done'
-
-python tad/final_concatenate.py $TARGET
-echo 'final_concatenate done'
-
-python tad/cutdowntad.py $TARGET
-echo 'cutdowntad done'
-
-python tad/orderlinks.py $TARGET
-echo 'orderlinks done'
+for stage in \
+    TADorder \
+    bedtoolIntersect \
+    split \
+    bTADlinks \
+    concatenate_linksbTAD \
+    tTADlinks \
+    linksbTAD_tissueReplace \
+    final_concatenate \
+    cutdowntad \
+    orderlinks
+do
+    "$PYTHON" "$REPO_DIR/tad/$stage.py" "$TARGET"
+    echo "$stage done"
+done
