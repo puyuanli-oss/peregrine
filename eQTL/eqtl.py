@@ -133,7 +133,7 @@ def eliminateOverlap(input_file, output_file, overlap_file, unmatched_file):
                     else:
                         overlap_dict[line] = 1
             else:
-                unmatched.write(line)
+                unmatched.write(line + '\n')
 
     with open(output_file, 'w') as out:
         for key in sorted(out_dict.keys()):
@@ -198,15 +198,16 @@ def linksDB(input_file, output_file):
                     count = len(hash[enh][gene][tis])
                     out.write(f"{enh}\t{gene}\t{tis}\t{count}\t{assay}\n")
 
-def concatenate(input_files, output_file):
+def concatenate(input_files, output_file, skip_headers=False):
     '''
         makes a combined file for all tissues
     '''
     with open(output_file, 'w') as outfile:
-        for file_name in input_files:
-            infile = open(file_name, 'r')
-            outfile.write(infile.read())
-            infile.close()
+        for index, file_name in enumerate(input_files):
+            with open(file_name, 'r') as infile:
+                if skip_headers and index > 0:
+                    next(infile, None)
+                outfile.write(infile.read())
 
 
 if __name__ == "__main__":
@@ -286,4 +287,4 @@ if __name__ == "__main__":
     linksDBeqtl_file = os.path.join(target_path, 'linksDBeqtl')
     concatenate(links_files, linksDBeqtl_file)
     linksDBnumeqtl_file = os.path.join(target_path, 'linksDBnumeqtl')
-    concatenate(linksnum_files, linksDBnumeqtl_file)
+    concatenate(linksnum_files, linksDBnumeqtl_file, skip_headers=True)

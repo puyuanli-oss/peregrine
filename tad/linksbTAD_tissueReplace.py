@@ -15,7 +15,11 @@ def tissuesReplace(input_file, output_file):
                 if len(line_split) == 4:
                     enhID, panthID, tiss, assay = line_split
                     cell = tissues.get(tiss, '')
+                    if not cell.strip():
+                        raise ValueError(f"{input_file}: missing tissue code for {tiss!r}")
                     out.write(f"{enhID}\t{panthID}\t{cell}\t{assay}\n")
+                else:
+                    raise ValueError(f"{input_file}: expected 4 tab-separated fields")
 
 if __name__ == "__main__":
 

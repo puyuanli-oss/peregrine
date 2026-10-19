@@ -46,5 +46,5 @@ if __name__ == "__main__":
     target_path = args.target_path
     os.makedirs(target_path, exist_ok=True)
 
-    target_path_base = target_path.split('/')[0]
+    target_path_base = os.path.dirname(os.path.abspath(target_path))
     cutdowntad(target_path_base + '/eQTL/linksDBnumeqtl', target_path_base + '/heirarchicalTAD/PSYCHIClinksDB', os.path.join(target_path, 'linksTADtissues'), os.path.join(target_path, 'selectTAD'))

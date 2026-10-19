@@ -26,15 +26,15 @@ def TADlinks(gene_file, enhancer_tad_file, output_file):
             tad = tad + '\t' + cell
             tadenh[enhID][tad] = 1
 
-    n = len(tadenh)
-    batch_size = 1000
-    start_idx = 0
-    count = 1
-    while start_idx < n:
-        end_idx = min(start_idx + batch_size, n)
-        count += 1
-        TADlinks_write_to_file(tadenh, tadgenes, output_file, start_idx, end_idx)
-        start_idx = end_idx
+    with open(output_file, 'w') as out:
+        for enh, tads in tadenh.items():
+            for tad in tads:
+                if tad in tadgenes:
+                    for gene in tadgenes[tad]:
+                        panthID = panther_mapping.get(gene, '')
+                        cell = tad.split('\t')[1]
+                        if enh and panthID and cell:
+                            out.write(f"{enh}\t{panthID}\t{cell}\t3\n")
 
 def TADlinks_write_to_file(tadenh, tadgenes, output_file, start_idx, end_idx):
     with open(output_file, 'a') as out:

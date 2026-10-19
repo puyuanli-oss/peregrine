@@ -73,29 +73,18 @@ def HGNC2PANTH(input_file, output_file, hgnc_file, unmatched_file, tissue_name):
 
     with open(input_file, 'r') as input, open(output_file, 'w') as out, open(unmatched_file, 'w') as unmatched:
         for line in input:
+            line = line.rstrip('\n')
             echr, estart, eend, enhID, pchr, pstart, pend, mix = line.strip().split('\t')
             mix_split = mix.split(':')
             gene = mix_split[0]
             pvalue = mix_split[2]
+
             if gene in hash1:
-                hgncID = hash1[gene]
-                if hgncID in panth:
-                    panthid = panth[hgncID]
-                    out.write(f'{echr}\t{estart}\t{eend}\t{enhID}\t{pchr}\t{pstart}\t{pend}\t{panthid}\t{pvalue}\t{tissue_name}\n')
-                else:
-                    unmatched.write(f'1\t{line}\n')
-            elif gene in hash2:
-                uniprot = hash2[gene]
-                if uniprot in panth:
-                    panthid = panth[uniprot]
-                    out.write(f'{echr}\t{estart}\t{eend}\t{enhID}\t{pchr}\t{pstart}\t{pend}\t{panthid}\t{pvalue}\t{tissue_name}\n')
-                else:
-                    unmatched.write(f'1\t{line}\n')
-            elif gene in hash3:
-                ensg = hash3[gene]
-                if ensg in panth:
-                    panthid = panth[ensg]
-                    out.write(f'{echr}\t{estart}\t{eend}\t{enhID}\t{pchr}\t{pstart}\t{pend}\t{panthid}\t{pvalue}\t{tissue_name}\n')
+                for candidate in (hash1[gene], hash2[gene], hash3[gene]):
+                    if candidate in panth:
+                        panthid = panth[candidate]
+                        out.write(f'{echr}\t{estart}\t{eend}\t{enhID}\t{pchr}\t{pstart}\t{pend}\t{panthid}\t{pvalue}\t{tissue_name}\n')
+                        break
                 else:
                     unmatched.write(f'1\t{line}\n')
             else:
@@ -174,6 +163,10 @@ if __name__ == "__main__":
     idmapping_processing(id_output_file)
 
     bed_files = glob.glob(os.path.join('heirarchicalTAD/data', '*'))
+    if not bed_files:
+        raise FileNotFoundError(
+            'No hierarchical TAD input files found in heirarchicalTAD/data'
+        )
     db_files = []
 
     for bed_file in bed_files:
@@ -199,4 +192,8 @@ if __name__ == "__main__":
             tissuesReplace(os.path.join(folder, 'intTADlinks_' + file_name), os.path.join(folder,  file_name + '_DB'))
             db_files.append(os.path.join(folder,  file_name + '_DB'))
 
+    if not db_files:
+        raise ValueError(
+            'No hierarchical TAD input files matched the tissue table'
+        )
     concatenate(db_files, os.path.join(target_path, 'PSYCHIClinksDB'))

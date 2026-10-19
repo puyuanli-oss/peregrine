@@ -6,7 +6,7 @@ if [[ $# -ne 1 || -z "$1" ]]; then
     exit 1
 fi
 
-for program in python3 bedtools perl; do
+for program in python3 bedtools; do
     if ! command -v "$program" >/dev/null 2>&1; then
         printf 'ERROR: Required command not found: %s\n' "$program" >&2
         exit 1
