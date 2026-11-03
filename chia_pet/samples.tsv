@@ -1,0 +1,4 @@
+sample_id	cell_type	target_protein	mango_file
+HCT116_POLR2A	HCT116	POLR2A	data/mango/HCT116_POLR2A.interactions.fdr.mango
+K562_POLR2A	K562	POLR2A	data/mango/K562_POLR2A.interactions.fdr.mango
+MCF7_POLR2A	MCF7	POLR2A	data/mango/MCF7_POLR2A.interactions.fdr.mango
