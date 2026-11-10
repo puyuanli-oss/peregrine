@@ -43,6 +43,13 @@ for program in bedtools; do
 done
 
 REPO_DIR="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Automatically include the verified ChIA-PET manifest in full runs.
+# Preserve explicit --chia-manifest overrides and other execution modes.
+if [[ "$MODE" == full && -z "$CHIA_MANIFEST" ]]; then
+    CHIA_MANIFEST="$REPO_DIR/chia_pet/samples.tsv"
+fi
+
 if [[ "$TARGET" != /* ]]; then TARGET="$PWD/$TARGET"; fi
 if [[ -n "$CHIA_MANIFEST" && "$CHIA_MANIFEST" != /* ]]; then CHIA_MANIFEST="$PWD/$CHIA_MANIFEST"; fi
 if [[ -n "$CHIA_GENES" && "$CHIA_GENES" != /* ]]; then CHIA_GENES="$PWD/$CHIA_GENES"; fi
